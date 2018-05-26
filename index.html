@@ -1,0 +1,148 @@
+<html>
+<head>
+</head>
+<body>
+
+<canvas id="mycanvas" width="400" height="300">
+</canvas>
+
+<script>
+
+function Player(x) {
+	this.x = x;
+	this.y = 300;
+	this.radius = 50;
+	this.movingLeft = false;
+	this.movingRight = false;
+}
+
+function Ball(x, y) {
+	this.x = x;
+	this.y = y;
+	this.radius = 20;
+	this.vx = 0;
+	this.vy = 0;
+}
+
+var players = [new Player(50), new Player(350)];
+var ball = new Ball(200, 50);
+
+var canvas = document.getElementById('mycanvas');
+
+var ct = canvas.getContext('2d');
+
+var a = 50;
+
+function SetMotion(keyName, keyup) {
+	if (keyName == 'ArrowLeft') {
+		players[1].movingLeft = keyup;
+	} else if (keyName == 'ArrowRight') {
+		players[1].movingRight = keyup;
+	} else if (keyName == 'a') {
+		players[0].movingLeft = keyup;
+	} else if (keyName == 'd') {
+		players[0].movingRight = keyup;
+	}
+}
+
+window.addEventListener('keydown', function(e) {
+	SetMotion(e.key, true);
+});
+
+window.addEventListener('keyup', function(e) {
+	SetMotion(e.key, false);
+});
+
+function DrawPlayer(ct, p, d, b) {
+	var e1 = { x: p.x + 27 * d, y: p.y - 25 };
+	var e2 = { x: p.x + 10 * d, y: p.y - 25 };
+
+	ct.beginPath();
+	ct.arc(p.x, p.y, 50, 0, Math.PI*2);
+	ct.stroke();
+
+	ct.beginPath();
+	ct.arc(e1.x, e1.y, 7, 0, Math.PI*2);
+	ct.stroke();
+
+	ct.beginPath();
+	ct.arc(e2.x, e2.y, 7, 0, Math.PI*2);
+	ct.stroke();
+
+	var d = Math.sqrt(Math.pow(p.x - b.x, 2) + Math.pow(p.y - b.y, 2));
+	var r = { x: (b.x - p.x) / d, y: (b.y - p.y) / d };
+
+	ct.beginPath();
+	ct.arc(e1.x + r.x * 3, e1.y + r.y * 3, 2, 0, Math.PI*2);
+	ct.fill();
+
+	ct.beginPath();
+	ct.arc(e2.x + r.x * 3, e2.y + r.y * 3, 2, 0, Math.PI*2);
+	ct.fill();
+}
+
+function process() {
+	for (var x = 0; x < players.length; x++) {
+		var p = players[x];
+		var vx = 0;
+
+		if (p.movingLeft) vx -= 2;
+		if (p.movingRight) vx += 2;
+
+		if (p.x + vx - p.radius < 0 || p.x + vx + p.radius > 400) {
+			continue;
+		}
+
+		p.x += vx;
+	}
+
+	bn = { x: ball.x + ball.vx, y: ball.y + ball.vy };
+
+	if (bn.y + ball.radius > 300) {
+		ball.vy = -ball.vy;
+	} else {
+		ball.vy += 0.1;
+	}
+
+	if (bn.x - ball.radius < 0 || bn.x + ball.radius > 400) {
+		ball.vx = -ball.vx;
+	}
+
+	for (var x = 0; x < players.length; x++) {
+		var p = players[x];
+
+		if ((p.x - bn.x) * (p.x - bn.x) + (p.y - bn.y) * (p.y - bn.y) < (ball.radius + p.radius) * (ball.radius + p.radius)) {
+			d = Math.sqrt(Math.pow(p.x - ball.x, 2) + Math.pow(p.y - ball.y, 2));
+			r = { x: (ball.x - p.x) / d, y: (ball.y - p.y) / d };
+
+			dp = (r.x * ball.vx + r.y * ball.vy);
+
+			r.x *= dp;
+			r.y *= dp;
+
+			ball.vx -= r.x * 2;
+			ball.vy -= r.y * 2;
+		}
+	}
+
+	ball.x += ball.vx;
+	ball.y += ball.vy;
+
+	ct.clearRect(0, 0, 400, 300);
+
+	DrawPlayer(ct, players[0], 1, ball);
+	DrawPlayer(ct, players[1], -1, ball);
+
+	ct.beginPath();
+	ct.arc(ball.x, ball.y, ball.radius, 0, Math.PI*2);
+	ct.stroke();
+
+	console.log('K: ' + 0.5 * (ball.vx * ball.vx + ball.vy * ball.vy) + ' P: ' + (0.1 * ball.y) + ' T: ' + (ball.vx * ball.vx + ball.vy * ball.vy + 0.1 * ball.y))
+}
+
+setInterval(function() { window.requestAnimationFrame(process); }, 15);
+
+</script>
+
+</body>
+</html>
