@@ -14,6 +14,8 @@ function Player(x) {
 	this.radius = 50;
 	this.movingLeft = false;
 	this.movingRight = false;
+	this.vx = 0;
+	this.vy = 0;
 }
 
 function Ball(x, y) {
@@ -30,8 +32,6 @@ var ball = new Ball(200, 50);
 var canvas = document.getElementById('mycanvas');
 
 var ct = canvas.getContext('2d');
-
-var a = 50;
 
 function SetMotion(keyName, keyup) {
 	if (keyName == 'ArrowLeft') {
@@ -54,12 +54,14 @@ window.addEventListener('keyup', function(e) {
 });
 
 function DrawPlayer(ct, p, d, b) {
-	var e1 = { x: p.x + 27 * d, y: p.y - 25 };
-	var e2 = { x: p.x + 10 * d, y: p.y - 25 };
-
+	/* Body */
 	ct.beginPath();
 	ct.arc(p.x, p.y, 50, 0, Math.PI*2);
 	ct.stroke();
+
+	/* Eyes */
+	var e1 = { x: p.x + 27 * d, y: p.y - 25 };
+	var e2 = { x: p.x + 10 * d, y: p.y - 25 };
 
 	ct.beginPath();
 	ct.arc(e1.x, e1.y, 7, 0, Math.PI*2);
@@ -69,6 +71,7 @@ function DrawPlayer(ct, p, d, b) {
 	ct.arc(e2.x, e2.y, 7, 0, Math.PI*2);
 	ct.stroke();
 
+	/* Eyeballs */
 	var d = Math.sqrt(Math.pow(p.x - b.x, 2) + Math.pow(p.y - b.y, 2));
 	var r = { x: (b.x - p.x) / d, y: (b.y - p.y) / d };
 
@@ -84,22 +87,22 @@ function DrawPlayer(ct, p, d, b) {
 function process() {
 	for (var x = 0; x < players.length; x++) {
 		var p = players[x];
-		var vx = 0;
+		p.vx = 0;
 
-		if (p.movingLeft) vx -= 2;
-		if (p.movingRight) vx += 2;
+		if (p.movingLeft) p.vx -= 2;
+		if (p.movingRight) p.vx += 2;
 
-		if (p.x + vx - p.radius < 0 || p.x + vx + p.radius > 400) {
+		if (p.x + p.vx - p.radius < 0 || p.x + p.vx + p.radius > 400) {
 			continue;
 		}
 
-		p.x += vx;
+		p.x += p.vx;
 	}
 
 	bn = { x: ball.x + ball.vx, y: ball.y + ball.vy };
 
 	if (bn.y + ball.radius > 300) {
-		ball.vy = -ball.vy;
+		ball.vy = -(ball.vy * 0.8);
 	} else {
 		ball.vy += 0.1;
 	}
@@ -112,13 +115,18 @@ function process() {
 		var p = players[x];
 
 		if ((p.x - bn.x) * (p.x - bn.x) + (p.y - bn.y) * (p.y - bn.y) < (ball.radius + p.radius) * (ball.radius + p.radius)) {
+			/* Distance */
 			d = Math.sqrt(Math.pow(p.x - ball.x, 2) + Math.pow(p.y - ball.y, 2));
+
+			/* Normalized Reaction Force Direction Vector */
 			r = { x: (ball.x - p.x) / d, y: (ball.y - p.y) / d };
 
-			dp = (r.x * ball.vx + r.y * ball.vy);
+			/* Reaction Force */
+			dp = (r.x * (ball.vx - p.vx) + r.y * (ball.vy - p.vy));
 
-			r.x *= dp;
-			r.y *= dp;
+			/* Reaction Force Vector */
+			r.x *= dp * 0.8;
+			r.y *= dp * 0.8;
 
 			ball.vx -= r.x * 2;
 			ball.vy -= r.y * 2;
@@ -136,8 +144,6 @@ function process() {
 	ct.beginPath();
 	ct.arc(ball.x, ball.y, ball.radius, 0, Math.PI*2);
 	ct.stroke();
-
-	console.log('K: ' + 0.5 * (ball.vx * ball.vx + ball.vy * ball.vy) + ' P: ' + (0.1 * ball.y) + ' T: ' + (ball.vx * ball.vx + ball.vy * ball.vy + 0.1 * ball.y))
 }
 
 setInterval(function() { window.requestAnimationFrame(process); }, 15);
